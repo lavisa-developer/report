@@ -1,10 +1,4 @@
 <?php
-session_start();
-// Check if user is logged in
-if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
-    header('Location: login.php');
-    exit;
-}
 require_once 'db.php';
 
 $db = new Database();
@@ -15,6 +9,7 @@ $message = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $_POST['username'];
     $email = $_POST['email'];
+    $manual_password = $_POST['manual_password'];
     
     // Check if user exists and is admin
     $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND email = ? AND role = 'admin'");
@@ -22,11 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($user) {
-        // Reset password to default 'password'
-        $newPassword = password_hash('password', PASSWORD_DEFAULT);
+        // Reset password to manual password
+        $newPassword = password_hash($manual_password, PASSWORD_DEFAULT);
         $updateStmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
         if ($updateStmt->execute([$newPassword, $user['id']])) {
-            $message = 'Password has been reset to "password". Please login with the new password.';
+            $message = 'Password has been reset. Please login with the new password.';
         } else {
             $message = 'Error resetting password.';
         }
@@ -60,11 +55,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <input type="text" id="username" name="username" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             
-            <div class="mb-6">
+            <div class="mb-4">
                 <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
                 <input type="email" id="email" name="email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
-            
+
+            <div class="mb-6">
+                <label for="manual_password" class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                <input type="password" id="manual_password" name="manual_password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium mb-4">Reset Password</button>
         </form>
         
